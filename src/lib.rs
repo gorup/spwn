@@ -6,8 +6,9 @@ use std::pin::Pin;
 
 pub mod macros;
 pub mod joinhandle;
+pub use joinhandle::JoinHandle;
 
-use crate::joinhandle::JoinHandle;
+//use crate::joinhandle::JoinHandle;
 
 pub(crate) static mut SPWNER: Spwner = Spwner::Noop;
 pub(crate) static STATE: AtomicUsize = AtomicUsize::new(0);
@@ -24,14 +25,14 @@ pub enum Spwner {
     Noop,
     #[cfg(feature = "tokio02")]
     Tokio,
-    #[cfg(feature = "async-std15")]
+    #[cfg(feature = "async-std16")]
     AsyncStd
 }
 
 // pub trait GenericFuture: Future + Send + 'static {}
 // pub trait GenericFutureOutput: Send + 'static {}
 
-pub fn spwn<T>(task: T) -> JoinHandle<T>
+pub fn spwn<T>(task: T) -> JoinHandle<T::Output>
     where
         T: Future + Send + 'static,
         T::Output: Send + 'static,
@@ -39,12 +40,12 @@ pub fn spwn<T>(task: T) -> JoinHandle<T>
     spwner().spwn(task)
 }
 
-pub fn spwn_blk<T>(task: T) -> JoinHandle<T>
+pub fn spwn_blk<F, R>(f: F) -> JoinHandle<R>
     where
-        T: Future + Send + 'static,
-        T::Output: Send + 'static,
+        F: FnOnce() -> R + Send + 'static,
+        R: Send + 'static,
 {
-    spwner().spwn_blk(task)
+    spwner().spwn_blk(f)
 }
 
 /// Sets up the spwner
@@ -79,7 +80,7 @@ pub(crate) fn spwner() -> &'static Spwner {
 
 impl Spwner {
     #[allow(unused_variables)]
-    pub fn spwn<T>(&self, task: T) -> JoinHandle<T>
+    pub fn spwn<T>(&self, task: T) -> JoinHandle<T::Output>
         where
             T: Future + Send + 'static,
             T::Output: Send + 'static,
@@ -88,29 +89,23 @@ impl Spwner {
             Spwner::Noop => panic!("No spwner has been initialized"),
             #[cfg(feature = "tokio02")]
             Spwner::Tokio => JoinHandle::Tokio(tokio::spawn(task)),
-            #[cfg(feature = "async-std15")]
-            Spwner::AsyncStd => {
-                println!("spawn asyncstd");
-                JoinHandle::AsyncStd(async_std::task::spawn(task))
-            }
+            #[cfg(feature = "async-std16")]
+            Spwner::AsyncStd => JoinHandle::AsyncStd(async_std::task::spawn(task))
         }
     }
 
     #[allow(unused_variables)]
-    pub fn spwn_blk<F, T>(&self, f: F) -> JoinHandle<T>
+    pub fn spwn_blk<F, R>(&self, f: F) -> JoinHandle<R>
         where
-            F: FnOnce() -> T + Send + 'static,
-            T: Send + 'static,
+            F: FnOnce() -> R + Send + 'static,
+            R: Send + 'static,
     {
         match self {
             Spwner::Noop => panic!("No spwner has been initialized"),
             #[cfg(feature = "tokio02")]
             Spwner::Tokio => JoinHandle::Tokio(tokio::task::spawn_blocking(f)),
-            #[cfg(feature = "async-std15")]
-            Spwner::AsyncStd => {
-                println!("spawn asyncstd");
-                JoinHandle::AsyncStd(async_std::task::spawn_blocking(f))
-            }
+            #[cfg(feature = "async-std16")]
+            Spwner::AsyncStd => JoinHandle::AsyncStd(async_std::task::spawn_blocking(f))
         }
     }
 }
