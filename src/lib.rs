@@ -1,11 +1,11 @@
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::future::Future;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 #[allow(unused_imports)]
 use std::pin::Pin;
 
-pub mod macros;
 pub mod joinhandle;
+pub mod macros;
 pub use joinhandle::JoinHandle;
 
 //use crate::joinhandle::JoinHandle;
@@ -26,24 +26,24 @@ pub enum Spwner {
     #[cfg(feature = "tokio02")]
     Tokio,
     #[cfg(feature = "async-std16")]
-    AsyncStd
+    AsyncStd,
 }
 
 // pub trait GenericFuture: Future + Send + 'static {}
 // pub trait GenericFutureOutput: Send + 'static {}
 
 pub fn spwn<T>(task: T) -> JoinHandle<T::Output>
-    where
-        T: Future + Send + 'static,
-        T::Output: Send + 'static,
+where
+    T: Future + Send + 'static,
+    T::Output: Send + 'static,
 {
     spwner().spwn(task)
 }
 
 pub fn spwn_blk<F, R>(f: F) -> JoinHandle<R>
-    where
-        F: FnOnce() -> R + Send + 'static,
-        R: Send + 'static,
+where
+    F: FnOnce() -> R + Send + 'static,
+    R: Send + 'static,
 {
     spwner().spwn_blk(f)
 }
@@ -81,31 +81,31 @@ pub(crate) fn spwner() -> &'static Spwner {
 impl Spwner {
     #[allow(unused_variables)]
     pub fn spwn<T>(&self, task: T) -> JoinHandle<T::Output>
-        where
-            T: Future + Send + 'static,
-            T::Output: Send + 'static,
+    where
+        T: Future + Send + 'static,
+        T::Output: Send + 'static,
     {
         match self {
             Spwner::Noop => panic!("No spwner has been initialized"),
             #[cfg(feature = "tokio02")]
             Spwner::Tokio => JoinHandle::Tokio(tokio::spawn(task)),
             #[cfg(feature = "async-std16")]
-            Spwner::AsyncStd => JoinHandle::AsyncStd(async_std::task::spawn(task))
+            Spwner::AsyncStd => JoinHandle::AsyncStd(async_std::task::spawn(task)),
         }
     }
 
     #[allow(unused_variables)]
     pub fn spwn_blk<F, R>(&self, f: F) -> JoinHandle<R>
-        where
-            F: FnOnce() -> R + Send + 'static,
-            R: Send + 'static,
+    where
+        F: FnOnce() -> R + Send + 'static,
+        R: Send + 'static,
     {
         match self {
             Spwner::Noop => panic!("No spwner has been initialized"),
             #[cfg(feature = "tokio02")]
             Spwner::Tokio => JoinHandle::Tokio(tokio::task::spawn_blocking(f)),
             #[cfg(feature = "async-std16")]
-            Spwner::AsyncStd => JoinHandle::AsyncStd(async_std::task::spawn_blocking(f))
+            Spwner::AsyncStd => JoinHandle::AsyncStd(async_std::task::spawn_blocking(f)),
         }
     }
 }

@@ -23,4 +23,10 @@ async-std16 = [
 async-std = { version = "1.6", features = ["attributes"] }
 tokio = { version = "0.2", features = ["full"] }
 spwn = { path = ".", features = ["tokio02", "async-std16"]}
-hyper = { path = "../hyper" }
+log = "0.4"
+env_logger = "0.7"
+hyper = "0.13"
+tide = "0.13"
+surf = "1.0"
+rocket = { git = "https://github.com/SergioBenitez/Rocket", ref = "1369dc47a357567ec3d3d711e318248dabd4b7f7" }
+# hyper = { path = "../hyper" }

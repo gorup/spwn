@@ -1,5 +1,5 @@
-use spwn::Spwner;
 use spwn::spwn;
+use spwn::Spwner;
 
 #[tokio::test]
 async fn basic_async_fn() {

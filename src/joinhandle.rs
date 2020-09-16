@@ -1,11 +1,12 @@
 use std::future::Future;
+use std::marker::Unpin;
 use std::pin::Pin;
 use std::task::{Context, Poll};
-use std::marker::Unpin;
 
+// Ideally this isn't an Enum that allows you to see what type it is..
 pub enum JoinHandle<T>
-    where
-        T: Send + 'static,
+where
+    T: Send + 'static,
 {
     Noop(T),
     #[cfg(feature = "tokio02")]
@@ -14,22 +15,13 @@ pub enum JoinHandle<T>
     AsyncStd(async_std::task::JoinHandle<T>),
 }
 
-unsafe impl<T> Send for JoinHandle<T>
-    where
-        T: Send + 'static,
-{}
-unsafe impl<T> Sync for JoinHandle<T>
-    where
-        T: Send + 'static,
-{}
-impl<T> Unpin for JoinHandle<T>
-    where
-        T: Send + 'static,
-{}
+unsafe impl<T> Send for JoinHandle<T> where T: Send + 'static {}
+unsafe impl<T> Sync for JoinHandle<T> where T: Send + 'static {}
+impl<T> Unpin for JoinHandle<T> where T: Send + 'static {}
 
 impl<T> Future for JoinHandle<T>
-    where
-        T: Send + 'static,
+where
+    T: Send + 'static,
 {
     type Output = Result<T, ()>;
 
